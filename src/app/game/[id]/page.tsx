@@ -34,6 +34,7 @@ export default function Home({
 
   const [currentQuestionSequence, setCurrentQuestionSequence] = useState(0)
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false)
+  const [shownChoiceIndex, setShownChoiceIndex] = useState<number | null>(null);
 
   const getGame = async () => {
     const { data: game } = await supabase
@@ -45,6 +46,7 @@ export default function Home({
     setCurrentScreen(game.phase as Screens)
     if (game.phase == Screens.quiz) {
       setCurrentQuestionSequence(game.current_question_sequence)
+      setShownChoiceIndex(game.shown_choice_index)
       setIsAnswerRevealed(game.is_answer_revealed)
     }
 
@@ -65,8 +67,7 @@ export default function Home({
   }
 
   useEffect(() => {
-    const setGameListner = (): RealtimeChannel => {
-      return supabase
+    const gameChannel = supabase
         .channel('game_participant')
         .on(
           'postgres_changes',
@@ -87,18 +88,17 @@ export default function Home({
             } else {
               setCurrentScreen(Screens.quiz)
               setCurrentQuestionSequence(game.current_question_sequence)
+              setShownChoiceIndex(game.shown_choice_index)
               setIsAnswerRevealed(game.is_answer_revealed)
             }
           }
         )
         .subscribe()
-    }
 
-    const gameChannel = setGameListner()
     return () => {
       supabase.removeChannel(gameChannel)
     }
-  }, [gameId])
+  }, [supabase, gameId])
 
   return (
     <main className="bg-green-500 min-h-screen">
@@ -111,9 +111,9 @@ export default function Home({
       {currentScreen == Screens.quiz && questions && (
         <Quiz
           question={questions![currentQuestionSequence]}
-          questionCount={questions!.length}
           participantId={participant!.id}
           isAnswerRevealed={isAnswerRevealed}
+          shownChoiceIndex={shownChoiceIndex}
         ></Quiz>
       )}
       {currentScreen == Screens.results && (
@@ -127,8 +127,7 @@ function Results({ participant }: { participant: Participant }) {
   return (
     <div className="flex justify-center items-center min-h-screen text-center">
       <div className="p-8 bg-black text-white rounded-lg">
-        <h2 className="text-2xl pb-4">Hey {participant.nickname}！</h2>
-        <p>Thanks for playing 🎉</p>
+        <p>Danke fürs Spielen, {participant.nickname}!</p>
       </div>
     </div>
   )

@@ -98,6 +98,7 @@ export default function Home({
             // start the quiz game
             const game = payload.new as Game
             setCurrentQuestionSequence(game.current_question_sequence)
+            setShownChoiceIndex(game.shown_choice_index)
             setCurrentScreen(game.phase as AdminScreens)
           }
         )
@@ -123,7 +124,8 @@ export default function Home({
     setGameListner()
   }, [gameId])
 
-  const [currentQuestionSequence, setCurrentQuestionSequence] = useState(0)
+  const [currentQuestionSequence, setCurrentQuestionSequence] = useState(0);
+  const [shownChoiceIndex, setShownChoiceIndex] = useState<number | null>(null);
 
   return (
     <main className="bg-green-600 min-h-screen">
@@ -136,6 +138,7 @@ export default function Home({
           questionCount={quizSet!.questions!.length}
           gameId={gameId}
           participants={participants}
+          shownChoiceIndex={shownChoiceIndex}
         ></Quiz>
       )}
       {currentScreen == AdminScreens.result && (

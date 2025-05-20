@@ -1,7 +1,7 @@
 
 # Open source Kahoot alternative
 
-This is an open source Kahoot alternative , a game-based learning platform that brings engagement and fun at school, work, and at home.
+This is an open source Kahoot alternative, a game-based learning platform that brings engagement and fun at school, work, and at home.
 This project aims to provide similar functionality to Kahoot while being customizable and extensible for various educational and entertainment purposes.
 
 
@@ -17,23 +17,43 @@ This project aims to provide similar functionality to Kahoot while being customi
 * [Supabase](https://supabase.com/)
 * [Tailwind CSS](https://tailwindcss.com/)
 
+TODOs:
+[x] Fragen bei allen gleichzeitig per Klick anzeigen
+[x] Fragen nacheinander per Klick anzeigen
+[ ] Leaderboard der ersten 3 oder 4 zwischen jeder Frage
+
 
 ## Run Locally
 ```sh
 # Install dependencies 
-
-npm install
+npm ci
 
 # Start Supabase
-
-supabase start
+npm run supabase:start
 
 # Start Next.js locally
-
 npm run dev
+
+# Build application
+npm run build
+
+# Serve on network (make sure to turn off the firewall and the network should be marked as private on windows)
+npm run start:network
 
 # Access app in your web browser at `http://localhost:3000`. 
 
+```
+
+## weird supabase port blocking docker bug in windows 
+
+```
+// bug:
+bind: An attempt was made to access a socket in a way forbidden by its access permissions.
+
+// solution in powershell with admin rights:
+net stop winnat
+netsh int ipv4 add excludedportrange protocol=tcp startport=54321 numberofports=5
+net start winnat
 ```
 
 Access the project root at / to join as a player.

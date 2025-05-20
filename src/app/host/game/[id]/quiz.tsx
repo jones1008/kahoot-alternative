@@ -8,15 +8,15 @@ export default function Quiz({
   questionCount: questionCount,
   gameId,
   participants,
+  shownChoiceIndex
 }: {
   question: Question
   questionCount: number
   gameId: string
   participants: Participant[]
+  shownChoiceIndex: number | null
 }) {
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false)
-
-  const [hasShownChoices, setHasShownChoices] = useState(false)
 
   const [answers, setAnswers] = useState<Answer[]>([])
 
@@ -31,6 +31,7 @@ export default function Quiz({
     } else {
       updateData = {
         current_question_sequence: question.order + 1,
+        shown_choice_index: null,
         is_answer_revealed: false,
       }
     }
@@ -41,6 +42,21 @@ export default function Quiz({
       .eq('id', gameId)
     if (error) {
       return alert(error.message)
+    }
+  }
+
+  const showNextChoice = async () => {
+    const index = shownChoiceIndex === null ? 0 : shownChoiceIndex + 1;
+    const { data, error } = await supabase
+      .from('games')
+      .update({
+        shown_choice_index: index,
+      })
+      .eq('id', gameId)
+    if (error) {
+      return alert(error.message)
+    } else {
+
     }
   }
 
@@ -56,12 +72,7 @@ export default function Quiz({
 
   useEffect(() => {
     setIsAnswerRevealed(false)
-    setHasShownChoices(false)
     setAnswers([])
-
-    setTimeout(() => {
-      setHasShownChoices(true)
-    }, TIME_TIL_CHOICE_REVEAL)
 
     const channel = supabase
       .channel('answers')
@@ -101,7 +112,7 @@ export default function Quiz({
             className="p-2 bg-white text-black rounded hover:bg-gray-200"
             onClick={getNextQuestion}
           >
-            Next
+            Nächste Frage
           </button>
         )}
       </div>
@@ -112,28 +123,40 @@ export default function Quiz({
         </h2>
       </div>
 
-      <div className="flex-grow text-white px-8">
-        {hasShownChoices && !isAnswerRevealed && (
-          <div className="flex justify-between items-center">
-            <div className="text-5xl">
-              <CountdownCircleTimer
-                onComplete={() => {
-                  onTimeUp()
-                }}
-                isPlaying
-                duration={20}
-                colors={['#004777', '#F7B801', '#A30000', '#A30000']}
-                colorsTime={[7, 5, 2, 0]}
-              >
-                {({ remainingTime }) => remainingTime}
-              </CountdownCircleTimer>
-            </div>
-            <div className="text-center">
-              <div className="text-6xl pb-4">{answers.length}</div>
-              <div className="text-3xl">Answers</div>
-            </div>
+      {(shownChoiceIndex === null || shownChoiceIndex < question.choices.length -1) && (
+        <div className="text-center">
+          <button
+            className="p-2 bg-white text-black rounded hover:bg-gray-200"
+            onClick={showNextChoice}
+          >
+            Nächste Antwort
+          </button>
+        </div>
+      )}
+
+      {(shownChoiceIndex && shownChoiceIndex >= question.choices.length -1) && (
+        <div className="flex justify-between items-center">
+          <div className="text-5xl text-white">
+            <CountdownCircleTimer
+              onComplete={() => {
+                onTimeUp()
+              }}
+              isPlaying
+              duration={20}
+              colors={['#004777', '#F7B801', '#A30000', '#A30000']}
+              colorsTime={[7, 5, 2, 0]}
+            >
+              {({ remainingTime }) => remainingTime}
+            </CountdownCircleTimer>
           </div>
-        )}
+          <div className="text-center">
+            <div className="text-6xl pb-4">{answers.length}</div>
+            <div className="text-3xl">Antworten</div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-grow text-white px-8">
         {isAnswerRevealed && (
           <div className="flex justify-center">
             {question.choices.map((choice, index) => (
@@ -146,8 +169,8 @@ export default function Quiz({
                     style={{
                       height: `${
                         (answers.filter(
-                          (answer) => answer.choice_id === choice.id
-                        ).length *
+                            (answer) => answer.choice_id === choice.id
+                          ).length *
                           100) /
                         (answers.length || 1)
                       }%`,
@@ -156,10 +179,10 @@ export default function Quiz({
                       index === 0
                         ? 'bg-red-500'
                         : index === 1
-                        ? 'bg-blue-500'
-                        : index === 2
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
+                          ? 'bg-blue-500'
+                          : index === 2
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
                     }`}
                   ></div>
                 </div>
@@ -168,10 +191,10 @@ export default function Quiz({
                     index === 0
                       ? 'bg-red-500'
                       : index === 1
-                      ? 'bg-blue-500'
-                      : index === 2
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
+                        ? 'bg-blue-500'
+                        : index === 2
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
                   }`}
                 >
                   {
@@ -185,72 +208,68 @@ export default function Quiz({
         )}
       </div>
 
-      {hasShownChoices && (
+      {shownChoiceIndex !== null && (
         <div className="flex justify-between flex-wrap p-4">
           {question.choices.map((choice, index) => (
             <div key={choice.id} className="w-1/2 p-1">
-              <div
-                className={`px-4 py-6 w-full text-2xl rounded font-bold text-white flex justify-between
-                ${
-                  index === 0
-                    ? 'bg-red-500'
-                    : index === 1
-                    ? 'bg-blue-500'
-                    : index === 2
-                    ? 'bg-yellow-500'
-                    : 'bg-green-500'
-                }
-                ${isAnswerRevealed && !choice.is_correct ? 'opacity-60' : ''}
-               `}
-              >
-                <div>{choice.body}</div>
-                {isAnswerRevealed && (
-                  <div>
-                    {choice.is_correct && (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={5}
-                        stroke="currentColor"
-                        className="w-6 h-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="m4.5 12.75 6 6 9-13.5"
-                        />
-                      </svg>
-                    )}
-                    {!choice.is_correct && (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={5}
-                        stroke="currentColor"
-                        className="w-6 h-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6 18 18 6M6 6l12 12"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                )}
-              </div>
+              {index <= shownChoiceIndex && (
+                <div
+                  className={`px-4 py-6 w-full text-2xl rounded font-bold text-white flex justify-between
+                    ${
+                      index === 0
+                        ? 'bg-red-500'
+                        : index === 1
+                          ? 'bg-blue-500'
+                          : index === 2
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                    }
+                    ${isAnswerRevealed && !choice.is_correct ? 'opacity-60' : ''}
+                   `}
+                >
+                  <div>{choice.body}</div>
+                  {isAnswerRevealed && (
+                    <div>
+                      {choice.is_correct && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={5}
+                          stroke="currentColor"
+                          className="w-6 h-6"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m4.5 12.75 6 6 9-13.5"
+                          />
+                        </svg>
+                      )}
+                      {!choice.is_correct && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={5}
+                          stroke="currentColor"
+                          className="w-6 h-6"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18 18 6M6 6l12 12"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
-
-      <div className="flex text-white py-2 px-4 items-center bg-black">
-        <div className="text-2xl">
-          {question.order + 1}/{questionCount}
-        </div>
-      </div>
     </div>
   )
 }
