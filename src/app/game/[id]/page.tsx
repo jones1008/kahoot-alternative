@@ -101,7 +101,7 @@ export default function Home({
   }, [supabase, gameId])
 
   return (
-    <main className="bg-green-500 min-h-screen">
+    <main className="bg-green-500 h-svh">
       {currentScreen == Screens.lobby && (
         <Lobby
           onRegisterCompleted={onRegisterCompleted}

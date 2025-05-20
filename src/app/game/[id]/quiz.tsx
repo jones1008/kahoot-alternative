@@ -34,6 +34,8 @@ export default function Quiz({
             Math.min((now - questionStartTime) / QUESTION_ANSWER_TIME, 1)
           ) * 1000
         )
+    console.log(score);
+    console.log(Math.min((now - questionStartTime) / QUESTION_ANSWER_TIME, 1))
 
     const { error } = await supabase.from('answers').insert({
       participant_id: playerId,
@@ -47,8 +49,14 @@ export default function Quiz({
     }
   }
 
+  useEffect(() => {
+    if (shownChoiceIndex && shownChoiceIndex >= question.choices.length -1) {
+      setQuestionStartTime(Date.now())
+    }
+  }, [shownChoiceIndex, question]);
+
   return (
-    <div className="h-screen flex flex-col items-stretch bg-slate-900 relative">
+    <div className="h-svh flex flex-col items-stretch bg-slate-900 relative">
       <div className="text-center">
         <h2 className="pb-4 text-2xl bg-white font-bold mx-4 my-12 p-4 rounded inline-block md:text-3xl md:px-24">
           {question.body}

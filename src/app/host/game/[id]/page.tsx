@@ -97,7 +97,7 @@ export default function Home({
           (payload) => {
             // start the quiz game
             const game = payload.new as Game
-            setCurrentQuestionSequence(game.current_question_sequence)
+            setCurrentQuestionIndex(game.current_question_sequence)
             setShownChoiceIndex(game.shown_choice_index)
             setCurrentScreen(game.phase as AdminScreens)
           }
@@ -116,7 +116,7 @@ export default function Home({
         return
       }
 
-      setCurrentQuestionSequence(gameData.current_question_sequence)
+      setCurrentQuestionIndex(gameData.current_question_sequence)
       setCurrentScreen(gameData.phase as AdminScreens)
     }
 
@@ -124,7 +124,7 @@ export default function Home({
     setGameListner()
   }, [gameId])
 
-  const [currentQuestionSequence, setCurrentQuestionSequence] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [shownChoiceIndex, setShownChoiceIndex] = useState<number | null>(null);
 
   return (
@@ -134,8 +134,9 @@ export default function Home({
       )}
       {currentScreen == AdminScreens.quiz && (
         <Quiz
-          question={quizSet!.questions![currentQuestionSequence]}
-          questionCount={quizSet!.questions!.length}
+          question={quizSet!.questions![currentQuestionIndex]}
+          questionIndex={currentQuestionIndex}
+          questionsCount={quizSet!.questions!.length}
           gameId={gameId}
           participants={participants}
           shownChoiceIndex={shownChoiceIndex}

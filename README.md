@@ -20,8 +20,10 @@ This project aims to provide similar functionality to Kahoot while being customi
 TODOs:
 [x] Fragen bei allen gleichzeitig per Klick anzeigen
 [x] Fragen nacheinander per Klick anzeigen
-[ ] Leaderboard der ersten 3 oder 4 zwischen jeder Frage
+[x] Leaderboard der ersten 3 oder 4 zwischen jeder Frage
 
+[x] fix mobile height
+[ ] Sample question where the score does not count
 
 ## Run Locally
 ```sh

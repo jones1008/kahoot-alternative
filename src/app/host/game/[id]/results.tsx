@@ -65,7 +65,7 @@ export default function Results({
                 {gameResult.nickname}
               </div>
               <div className="pl-2">
-                <span className="text-xl font-bold">
+                <span className="text-3xl font-bold">
                   {gameResult.total_score}
                 </span>&nbsp;
                 <span>Punkte</span>

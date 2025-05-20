@@ -10,3 +10,9 @@ body {
     background-size: cover;
     background-repeat: no-repeat; */
 }
+
+.h-svh {
+    height: 100%;
+    height: 100vh;
+    height: 100svh;
+}

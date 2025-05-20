@@ -1,17 +1,18 @@
-import { TIME_TIL_CHOICE_REVEAL } from '@/constants'
-import { Answer, Participant, Question, supabase } from '@/types/types'
+import {Answer, GameResult, Participant, Question, supabase} from '@/types/types'
 import { useEffect, useRef, useState } from 'react'
 import { CountdownCircleTimer } from 'react-countdown-circle-timer'
 
 export default function Quiz({
   question: question,
-  questionCount: questionCount,
+  questionIndex: questionIndex,
+  questionsCount: questionsCount,
   gameId,
   participants,
   shownChoiceIndex
 }: {
   question: Question
-  questionCount: number
+  questionIndex: number
+  questionsCount: number
   gameId: string
   participants: Participant[]
   shownChoiceIndex: number | null
@@ -20,17 +21,19 @@ export default function Quiz({
 
   const [answers, setAnswers] = useState<Answer[]>([])
 
+  const [gameResults, setGameResults] = useState<GameResult[]>([])
+
   const answerStateRef = useRef<Answer[]>()
 
   answerStateRef.current = answers
 
   const getNextQuestion = async () => {
     var updateData
-    if (questionCount == question.order + 1) {
+    if (questionIndex + 1 >= questionsCount) {
       updateData = { phase: 'result' }
     } else {
       updateData = {
-        current_question_sequence: question.order + 1,
+        current_question_sequence: questionIndex + 1,
         shown_choice_index: null,
         is_answer_revealed: false,
       }
@@ -55,8 +58,6 @@ export default function Quiz({
       .eq('id', gameId)
     if (error) {
       return alert(error.message)
-    } else {
-
     }
   }
 
@@ -104,8 +105,28 @@ export default function Quiz({
     }
   }, [question.id])
 
+  useEffect(() => {
+    setGameResults([]);
+    if (isAnswerRevealed) {
+      const getResults = async () => {
+        const { data, error } = await supabase
+          .from('game_results')
+          .select()
+          .eq('game_id', gameId)
+          .order('total_score', { ascending: false })
+        if (error) {
+          return alert(error.message)
+        }
+
+        setGameResults(data)
+      }
+
+      getResults();
+    }
+  }, [isAnswerRevealed, gameId]);
+
   return (
-    <div className="h-screen flex flex-col items-stretch bg-slate-900 relative">
+    <div className="min-h-screen flex flex-col items-stretch bg-slate-900 relative">
       <div className="absolute right-4 top-4">
         {isAnswerRevealed && (
           <button
@@ -134,48 +155,63 @@ export default function Quiz({
         </div>
       )}
 
-      {(shownChoiceIndex && shownChoiceIndex >= question.choices.length -1) && (
-        <div className="flex justify-between items-center">
-          <div className="text-5xl text-white">
-            <CountdownCircleTimer
-              onComplete={() => {
-                onTimeUp()
-              }}
-              isPlaying
-              duration={20}
-              colors={['#004777', '#F7B801', '#A30000', '#A30000']}
-              colorsTime={[7, 5, 2, 0]}
-            >
-              {({ remainingTime }) => remainingTime}
-            </CountdownCircleTimer>
+      <div className="relative">
+        {(shownChoiceIndex && shownChoiceIndex >= question.choices.length -1) && (
+          <div>
+            <div className="text-5xl text-white left-6 absolute">
+              <CountdownCircleTimer
+                onComplete={() => {
+                  onTimeUp()
+                }}
+                isPlaying
+                duration={20}
+                colors={['#004777', '#F7B801', '#A30000', '#A30000']}
+                colorsTime={[7, 5, 2, 0]}
+              >
+                {({ remainingTime }) => remainingTime}
+              </CountdownCircleTimer>
+            </div>
+            <div className="text-center text-white right-6 absolute">
+              <div className="text-6xl pb-4">{answers.length}</div>
+              <div className="text-3xl">Antworten</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-6xl pb-4">{answers.length}</div>
-            <div className="text-3xl">Antworten</div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="flex-grow text-white px-8">
         {isAnswerRevealed && (
-          <div className="flex justify-center">
-            {question.choices.map((choice, index) => (
-              <div
-                key={choice.id}
-                className="mx-2 h-48 w-24 flex flex-col items-stretch justify-end"
-              >
-                <div className="flex-grow relative">
+          <div className="flex flex-row gap-10 justify-center items-center">
+            <div className="flex justify-center">
+              {question.choices.map((choice, index) => (
+                <div
+                  key={choice.id}
+                  className="mx-2 h-48 w-24 flex flex-col items-stretch justify-end"
+                >
+                  <div className="flex-grow relative">
+                    <div
+                      style={{
+                        height: `${
+                          (answers.filter(
+                              (answer) => answer.choice_id === choice.id
+                            ).length *
+                            100) /
+                          (answers.length || 1)
+                        }%`,
+                      }}
+                      className={`absolute bottom-0 left-0 right-0 mb-1 rounded-t ${
+                        index === 0
+                          ? 'bg-red-500'
+                          : index === 1
+                            ? 'bg-blue-500'
+                            : index === 2
+                              ? 'bg-yellow-500'
+                              : 'bg-green-500'
+                      }`}
+                    ></div>
+                  </div>
                   <div
-                    style={{
-                      height: `${
-                        (answers.filter(
-                            (answer) => answer.choice_id === choice.id
-                          ).length *
-                          100) /
-                        (answers.length || 1)
-                      }%`,
-                    }}
-                    className={`absolute bottom-0 left-0 right-0 mb-1 rounded-t ${
+                    className={`mt-1 text-white text-lg text-center py-2 rounded-b ${
                       index === 0
                         ? 'bg-red-500'
                         : index === 1
@@ -184,26 +220,48 @@ export default function Quiz({
                             ? 'bg-yellow-500'
                             : 'bg-green-500'
                     }`}
-                  ></div>
+                  >
+                    {
+                      answers.filter((answer) => answer.choice_id === choice.id)
+                        .length
+                    }
+                  </div>
                 </div>
-                <div
-                  className={`mt-1 text-white text-lg text-center py-2 rounded-b ${
-                    index === 0
-                      ? 'bg-red-500'
-                      : index === 1
-                        ? 'bg-blue-500'
-                        : index === 2
-                          ? 'bg-yellow-500'
-                          : 'bg-green-500'
-                  }`}
-                >
-                  {
-                    answers.filter((answer) => answer.choice_id === choice.id)
-                      .length
-                  }
-                </div>
+              ))}
+            </div>
+            {gameResults && (
+              <div className="mt-4">
+                <div className="text-3xl text-center">Bestenliste:</div>
+                {gameResults.map((gameResult, index) => (
+                  <div key={gameResult.participant_id} className="flex justify-center items-stretch">
+                    {index <= 7 && (
+                      <div
+                        className={`flex justify-between items-center bg-white py-2 px-4 rounded my-4 max-w-2xl w-full text-black ${
+                          index < 3 ? 'shadow-xl font-bold' : ''
+                        }`}
+                      >
+                        <div className={`pr-4 ${index < 3 ? 'text-3xl' : 'text-l'}`}>
+                          {index + 1}
+                        </div>
+                        <div
+                          className={`flex-grow font-bold ${
+                            index < 3 ? 'text-5xl' : 'text-2xl'
+                          }`}
+                        >
+                          {gameResult.nickname}
+                        </div>
+                        <div className="pl-2">
+                      <span className="text-3xl font-bold">
+                        {gameResult.total_score}
+                      </span>&nbsp;
+                          <span>Punkte</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
