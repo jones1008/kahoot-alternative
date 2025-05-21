@@ -46,6 +46,20 @@ export default function Quiz({
     if (error) {
       return alert(error.message)
     }
+
+    removeScoreFromExcemptedQuestion();
+  }
+
+  const removeScoreFromExcemptedQuestion = async () => {
+    if (question.exempt_from_score) {
+      const { data, error } = await supabase
+        .from('answers')
+        .delete()
+        .eq('question_id', question.id);
+      if (error) {
+        return alert(error.message)
+      }
+    }
   }
 
   const showNextChoice = async () => {
